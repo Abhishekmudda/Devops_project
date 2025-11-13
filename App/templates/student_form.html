@@ -1,0 +1,33 @@
+
+{% extends 'base.html' %}
+{% block title %}{{ action }} Student • Student Manager{% endblock %}
+{% block content %}
+  <div class="max-w-2xl mx-auto card">
+    <h2 class="text-2xl font-bold mb-4">{{ action }} student</h2>
+    <form method="POST" class="space-y-4">
+      {{ form.hidden_tag() }}
+      <div>
+        {{ form.roll_number.label(class_='block text-sm font-medium mb-1') }}
+        {{ form.roll_number(class_='input') }}
+      </div>
+      <div>
+        {{ form.name.label(class_='block text-sm font-medium mb-1') }}
+        {{ form.name(class_='input') }}
+      </div>
+      <div>
+        {{ form.branch.label(class_='block text-sm font-medium mb-1') }}
+        {{ form.branch(class_='input') }}
+      </div>
+      <div>
+        {{ form.email.label(class_='block text-sm font-medium mb-1') }}
+        {{ form.email(class_='input') }}
+      </div>
+      <div>
+        {{ form.phone.label(class_='block text-sm font-medium mb-1') }}
+        {{ form.phone(class_='input') }}
+      </div>
+      <button class="btn btn-primary">{{ form.submit.label.text }}</button>
+      <a class="btn btn-outline" href="{{ url_for('dashboard') }}">Cancel</a>
+    </form>
+  </div>
+{% endblock %}

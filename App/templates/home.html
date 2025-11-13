@@ -1,0 +1,28 @@
+
+{% extends 'base.html' %}
+{% block title %}Home • Student Manager{% endblock %}
+{% block content %}
+  <section class="grid md:grid-cols-2 gap-8 items-center">
+    <div class="space-y-6">
+      <h1 class="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
+        Manage Students with <span class="text-blue-700">clarity</span> and <span class="text-blue-700">speed</span>.
+      </h1>
+      <p class="text-slate-600 text-lg">
+        Add, search, update, and organize your student records in a beautiful, responsive dashboard.
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <a href="{{ url_for('signup') }}" class="btn btn-primary">Get started</a>
+        <a href="{{ url_for('features') }}" class="btn btn-outline">See features</a>
+      </div>
+      <div class="flex gap-6 pt-4">
+        <div><div class="text-3xl font-bold text-blue-700">6</div><div class="text-slate-500">Core features</div></div>
+        <div><div class="text-3xl font-bold text-blue-700">100%</div><div class="text-slate-500">Responsive</div></div>
+        <div><div class="text-3xl font-bold text-blue-700">Secure</div><div class="text-slate-500">Authentication</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <img class="rounded-xl" src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=1200&auto=format&fit=crop" alt="Students" />
+      <p class="text-slate-500 text-sm mt-3">A dashboard designed for speed and simplicity.</p>
+    </div>
+  </section>
+{% endblock %}

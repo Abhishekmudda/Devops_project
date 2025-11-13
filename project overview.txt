@@ -1,0 +1,6 @@
+step1 Create a Jenkins server using EC2 instance connect to it and setup the user.
+step2 build image and push it to ECR
+step3 Deploy the infrastructure [terraform]
+ste4 using Ansible code configure the cluster and deploy all the yaml manifests
+
+ 

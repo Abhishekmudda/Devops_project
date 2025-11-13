@@ -1,0 +1,30 @@
+---
+- name: Build and push Docker image to ECR
+  hosts: localhost
+  vars:
+    aws_region: "{{ aws_region }}"
+    ecr_repo: "{{ ecr_repo }}"
+    account_id: "{{ account_id }}"
+    image_name: "student-mgmt"
+    tag: "latest"
+
+  tasks:
+
+    - name: Login to ECR
+      command: >
+        aws ecr get-login-password --region {{ aws_region }} |
+        docker login --username AWS --password-stdin
+        {{ account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com
+
+    - name: Build Docker image
+      command: docker build -t {{ image_name }}:{{ tag }} ../App
+
+    - name: Tag image
+      command: >
+        docker tag {{ image_name }}:{{ tag }}
+        {{ account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com/{{ ecr_repo }}:{{ tag }}
+
+    - name: Push image
+      command: >
+        docker push
+        {{ account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com/{{ ecr_repo }}:{{ tag }}

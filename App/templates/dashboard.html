@@ -1,0 +1,74 @@
+
+{% extends 'base.html' %}
+{% block title %}Dashboard • Student Manager{% endblock %}
+{% block content %}
+  <div class="grid md:grid-cols-4 gap-6 items-start">
+    <div class="md:col-span-3 space-y-6">
+      <div class="card flex items-center justify-between">
+        <div>
+          <div class="text-slate-500 text-sm">Total students</div>
+          <div class="text-3xl font-bold text-slate-900">{{ total_count }}</div>
+        </div>
+        <a href="{{ url_for('student_create') }}" class="btn btn-primary">Add student</a>
+      </div>
+
+      <form method="GET" class="card">
+        <div class="grid md:grid-cols-3 gap-4">
+          <input name="q" value="{{ q }}" class="input" placeholder="Search by roll number or name" />
+          <select name="branch" class="input">
+            <option value="">All branches</option>
+            {% for b in BRANCHES %}
+              <option value="{{ b }}" {% if b==branch %}selected{% endif %}>{{ b }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-primary">Search</button>
+        </div>
+      </form>
+
+      <div class="card overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-500">
+              <th class="py-2">Roll No</th>
+              <th class="py-2">Name</th>
+              <th class="py-2">Branch</th>
+              <th class="py-2">Email</th>
+              <th class="py-2">Phone</th>
+              <th class="py-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            {% for s in students %}
+            <tr class="hover:bg-slate-50">
+              <td class="py-2">{{ s.roll_number }}</td>
+              <td class="py-2">{{ s.name }}</td>
+              <td class="py-2">{{ s.branch }}</td>
+              <td class="py-2">{{ s.email or '-' }}</td>
+              <td class="py-2">{{ s.phone or '-' }}</td>
+              <td class="py-2 space-x-2">
+                <a href="{{ url_for('student_edit', student_id=s.id) }}" class="text-blue-700">Edit</a>
+                <form method="POST" action="{{ url_for('student_delete', student_id=s.id) }}" class="inline" onsubmit="return confirm('Delete this student?')">
+                  <button class="text-red-600">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="py-4 text-slate-500">No students found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside class="space-y-6">
+      <div class="card">
+        <h3 class="font-semibold mb-2">Tips</h3>
+        <ul class="list-disc list-inside text-slate-600 text-sm">
+          <li>Use the search bar for roll number or name.</li>
+          <li>Filter by branch for quick grouping.</li>
+          <li>Edit to fix typos; delete to remove records.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+{% endblock %}

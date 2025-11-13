@@ -1,0 +1,25 @@
+
+{% extends 'base.html' %}
+{% block title %}Sign up • Student Manager{% endblock %}
+{% block content %}
+  <div class="max-w-md mx-auto card">
+    <h2 class="text-2xl font-bold mb-4">Create your account</h2>
+    <form method="POST" class="space-y-4">
+      {{ form.hidden_tag() }}
+      <div>
+        {{ form.email.label(class_='block text-sm font-medium mb-1') }}
+        {{ form.email(class_='input') }}
+      </div>
+      <div>
+        {{ form.password.label(class_='block text-sm font-medium mb-1') }}
+        {{ form.password(class_='input') }}
+      </div>
+      <div>
+        {{ form.confirm.label(class_='block text-sm font-medium mb-1') }}
+        {{ form.confirm(class_='input') }}
+      </div>
+      <button class="btn btn-primary w-full">{{ form.submit.label.text }}</button>
+    </form>
+    <p class="text-sm text-slate-500 mt-4">Already have an account? <a href="{{ url_for('login') }}" class="text-blue-700">Log in</a>.</p>
+  </div>
+{% endblock %}

@@ -1,0 +1,23 @@
+
+{% extends 'base.html' %}
+{% block title %}Features • Student Manager{% endblock %}
+{% block content %}
+  <h2 class="text-3xl font-bold mb-6">Everything you need</h2>
+  <div class="grid md:grid-cols-3 gap-6">
+    {% set feats = [
+      ('Total student count','At-a-glance count on your dashboard.'),
+      ('Add new students','Comprehensive, clean forms with validation.'),
+      ('Search & filter','Find by roll number/name and filter by branch.'),
+      ('Update records','Edit student details quickly.'),
+      ('Delete records','Remove entries safely with validations.'),
+      ('Responsive UI','Beautiful on mobile, tablet, and desktop.')
+    ] %}
+    {% for title, desc in feats %}
+      <div class="card hover:shadow-lg transition">
+        <div class="w-10 h-10 rounded-xl bg-blue-100 mb-3"></div>
+        <div class="font-semibold text-slate-900">{{ title }}</div>
+        <div class="text-slate-600 text-sm mt-1">{{ desc }}</div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
