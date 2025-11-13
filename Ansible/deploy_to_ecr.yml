@@ -1,6 +1,7 @@
 ---
 - name: Build and push Docker image to ECR
   hosts: localhost
+  become: yes
   vars:
     aws_region: "{{ aws_region }}"
     ecr_repo: "{{ ecr_repo }}"
