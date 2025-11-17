@@ -3,20 +3,24 @@
   hosts: localhost
   connection: local
   become: no
-  # vars:
-  #   aws_region: "{{ aws_region }}"
-  #   ecr_repo: "{{ ecr_repo }}"
-  #   account_id: "{{ account_id }}"
-  #   image_name: "student-mgmt"
-  #   tag: "latest"
+  vars:
+    aws_region: "{{ aws_region }}"
+    ecr_repo: "{{ ecr_repo }}"
+    account_id: "{{ account_id }}"
+    image_name: "student-mgmt"
+    tag: "latest"
 
   tasks:
-
+    
     - name: Login to ECR
       shell: > 
         aws ecr get-login-password --region {{ aws_region }} |
         docker login --username AWS --password-stdin {{ account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com
-      
+      environment:
+        AWS_ACCESS_KEY_ID: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+        AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+        AWS_DEFAULT_REGION: "{{ aws_region }}"
+
     - name: Build Docker image
       command: docker build -t {{ image_name }}:{{ tag }} ../App
 
