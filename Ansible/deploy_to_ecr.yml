@@ -1,13 +1,14 @@
 ---
 - name: Build and push Docker image to ECR
   hosts: localhost
-  become: yes
-  vars:
-    aws_region: "{{ aws_region }}"
-    ecr_repo: "{{ ecr_repo }}"
-    account_id: "{{ account_id }}"
-    image_name: "student-mgmt"
-    tag: "latest"
+  connection: local
+  become: no
+  # vars:
+  #   aws_region: "{{ aws_region }}"
+  #   ecr_repo: "{{ ecr_repo }}"
+  #   account_id: "{{ account_id }}"
+  #   image_name: "student-mgmt"
+  #   tag: "latest"
 
   tasks:
 
