@@ -5,7 +5,7 @@ resource "aws_instance" "My_EC2_instance" {
   subnet_id                   = module.public_subnet.subnet_id[0]
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.sg-group.id]
-  key_name                    = aws_key_pair.student_key_pair.key_name
+  key_name                    = var.key_name
   tags = {
     Name = "Bastion_EC2"
   }
@@ -46,7 +46,7 @@ resource "aws_security_group" "sg-group" {
 ##IAM Role & policies for Bastion EC2##
 
 resource "aws_iam_role" "Bastion_ec2_role" {
-  name = "Bastion_ec2_role"
+  name = "BastionEKSRole"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = ({
@@ -59,7 +59,7 @@ resource "aws_iam_role" "Bastion_ec2_role" {
 
 
 resource "aws_iam_policy" "Bastion_policy" {
-  name        = "Bastion_policy"
+  name        = "BastionEKSPolicy"
   
   policy = jsonencode({
     Version = "2012-10-17"

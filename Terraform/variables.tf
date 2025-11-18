@@ -46,3 +46,7 @@ variable "node_type" {
 variable "chart_version" {
   type = string
 }
+
+variable "key_name" {
+  type = string
+}
