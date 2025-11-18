@@ -22,6 +22,7 @@ pipeline {
                     echo "Repository cloned at: ${PROJECT_DIR}"
                 '''
             }
+         }
         stage("Install terraform") {
             steps {
                 script {
