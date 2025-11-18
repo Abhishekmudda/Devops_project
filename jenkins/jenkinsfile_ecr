@@ -56,8 +56,6 @@ pipeline {
                             echo "Adding Jenkins to docker group..."
                             sudo usermod -aG docker jenkins
 
-                            sudo systemctl restart jenkins
-
                             echo "Docker installed successfully."
                         '''
                     }

@@ -3,7 +3,7 @@
   hosts: localhost
   connection: local
   become: yes
-
+  become_user: root
   tasks:
 
     - name: Login to ECR
@@ -16,10 +16,10 @@
         AWS_DEFAULT_REGION: "{{ aws_region }}"
 
     - name: Build Docker image
-      command: docker build -t student-mgmt:latest ../App
+      command: sudo docker build -t student-mgmt:latest ../App
 
     - name: Tag image
-      command: docker tag student-mgmt:latest {{ account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com/{{ ecr_repo }}:latest
+      command: sudo docker tag student-mgmt:latest {{ account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com/{{ ecr_repo }}:latest
 
     - name: Push image
-      command: docker push {{ account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com/{{ ecr_repo }}:latest
+      command: sudo docker push {{ account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com/{{ ecr_repo }}:latest
