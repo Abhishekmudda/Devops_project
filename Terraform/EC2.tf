@@ -1,3 +1,4 @@
+##Bastion EC2 Instance###
 resource "aws_instance" "My_EC2_instance" {
   ami                         = "ami-0150ccaf51ab55a51"
   instance_type               = "t2.micro"
@@ -10,6 +11,7 @@ resource "aws_instance" "My_EC2_instance" {
   }
 }
 
+##security group for BAstion EC2##
 resource "aws_security_group" "sg-group" {
   vpc_id      = module.my_vpc.vpc_id
   description = "allow ssh, http and https"
@@ -41,18 +43,48 @@ resource "aws_security_group" "sg-group" {
   }
 }
 
+##IAM Role & policies for Bastion EC2##
 
-# data "templatefile" "inventory" {
-#   template = file("${path.module}/inventory.tpl")
-#   vars = {
-#     public_ip        = aws_instance.my_ec2.public_ip
-#     private_key_path = "~/.ssh/mykey.pem"
-#   }
-#   depends_on = [ aws_instance.My_EC2_instance ]
-# }
+resource "aws_iam_role" "Bastion_ec2_role" {
+  name = "Bastion_ec2_role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = ({
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    })
+  })
+}
 
-# resource "local_file" "ansible_inventory" {
-#   content  = data.templatefile.inventory
-#   filename = "${path.module}/inventory.ini"
-#   depends_on = [ data.templatefile.inventory ]
-# }
+
+resource "aws_iam_policy" "Bastion_policy" {
+  name        = "Bastion_policy"
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["eks:*"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["ec2:Describe*"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameter"]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+
+resource "aws_iam_role_policy_attachment" "attach" {
+  role       = aws_iam_role.Bastion_ec2_role.name
+  policy_arn = aws_iam_policy.Bastion_policy.arn
+}
