@@ -1,0 +1,12 @@
+region              = "us-east-1"
+vpc_cidr            = "10.0.0.0/16"
+vpc_name            = "student-vpc"
+public_subnet_name  = "public_subnet"
+public_subnet_cidr  = ["10.0.1.0/24"]
+private_subnet_name = "private_subnet"
+private_subnet_cidr = ["10.0.2.0/24", "10.0.3.0/24"]
+cluster_name        = "student-cluster"
+eks_version         = "1.30"
+node_group_name     = "single-node"
+node_type           = "t2.medium"
+chart_version       = "1.9.2" 

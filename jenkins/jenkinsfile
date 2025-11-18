@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: "ACCOUNT_ID", defaultValue: "440764891644", description: "Enter AWS Account ID")
+        string(name: "AWS_REGION", defaultValue: "us-east-1", description: "Enter AWS Region")
+        string(name: "ECR_REPO", defaultValue: "student-management", description: "Enter ECR Repository Name")
+    }
+
+    environment {
+        PLAYBOOK_FILE = "deploy_to_ecr.yml"
+        ANSIBLE_IMAGE = "cytopia/ansible:latest"
+        PROJECT_DIR   = "${WORKSPACE}/ansible-project"
+    }
+
+    stages {
+
+        stage('Install Docker') {
+            steps {
+                sh '''
+                    echo "Updating system..."
+                    sudo apt update -y
+
+                    echo "Installing Docker..."
+                    sudo apt install -y docker.io
+
+                    echo "Adding Jenkins to docker group..."
+                    sudo usermod -aG docker jenkins
+
+                    sudo systemctl enable docker
+                    sudo systemctl start docker
+
+                    echo "Docker installed successfully."
+                '''
+            }
+        }
+
+        stage('Pull Ansible Repository') {
+            steps {
+                sh '''
+                    echo "Cloning Ansible repository..."
+                    rm -rf ${PROJECT_DIR}
+                    git clone https://github.com/Abhishekmudda/Devops_project.git ${PROJECT_DIR}
+                    echo "Repository cloned at: ${PROJECT_DIR}"
+                '''
+            }
+        }
+        
+        stage('Deploy to ECR via Ansible') {
+            steps {
+                sh '''
+                    echo "Running Ansible playbook inside Ansible Docker container..."
+
+                    docker run --rm \
+						-v ${PROJECT_DIR}:/work \
+						-v /var/run/docker.sock:/var/run/docker.sock \
+						-v ~/.aws:/root/.aws \
+						-w /work/Ansible \
+						${ANSIBLE_IMAGE} \
+						sh -c "
+							apk update && apk add docker-cli aws-cli && ansible-playbook ${PLAYBOOK_FILE} \
+							--extra-vars 'aws_region=${AWS_REGION} ecr_repo=${ECR_REPO} account_id=${ACCOUNT_ID}'
+                        "
+                    echo "ECR deployment completed successfully."
+                '''
+            }
+        }
+    }
+}

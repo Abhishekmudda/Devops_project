@@ -1,0 +1,127 @@
+---
+- name: Configure OIDC and install AWS Load Balancer Controller on EKS
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    aws_region: "us-east-1"
+    cluster_name: "student-cluster"
+    account_id: "440764891644"
+    vpc_id: "vpc-0c1400b96c9c0dff7"
+
+    alb_controller_version: "v2.11.0"
+    iam_policy_name: "AWSLoadBalancerControllerIAMPolicy"
+    iam_policy_file: "/tmp/iam_policy.json"
+
+  tasks:
+    - name: Update kubeconfig for the EKS cluster
+      command: >
+        aws eks update-kubeconfig
+        --region {{ aws_region }}
+        --name {{ cluster_name }}
+      register: update_kubeconfig
+      changed_when: "'Added new context' in update_kubeconfig.stdout"
+
+    - name: Get EKS cluster OIDC issuer URL
+      command: >
+        aws eks describe-cluster
+        --name {{ cluster_name }}
+        --region {{ aws_region }}
+        --query cluster.identity.oidc.issuer
+        --output text
+      register: oidc_issuer
+      changed_when: false
+
+    - name: Extract OIDC ID from issuer URL
+      set_fact:
+        oidc_id: "{{ oidc_issuer.stdout.split('/') | last }}"
+
+    - name: List existing IAM OIDC providers
+      command: aws iam list-open-id-connect-providers
+      register: oidc_providers
+      changed_when: false
+
+    - name: Associate IAM OIDC provider with the cluster if missing
+      command: >
+        eksctl utils associate-iam-oidc-provider
+        --region={{ aws_region }}
+        --cluster={{ cluster_name }}
+        --approve
+      when: oidc_id not in oidc_providers.stdout
+
+    - name: Download IAM policy JSON for AWS Load Balancer Controller
+      get_url:
+        url: "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/{{ alb_controller_version }}/docs/install/iam_policy.json"
+        dest: "{{ iam_policy_file }}"
+        mode: '0644'
+
+    - name: Check if IAM policy for AWS Load Balancer Controller already exists
+      command: >
+        aws iam list-policies
+        --scope Local
+        --query "Policies[?PolicyName=='{{ iam_policy_name }}'].Arn"
+        --output text
+      register: lb_policy
+      changed_when: false
+
+    - name: Create IAM policy for AWS Load Balancer Controller (if not exists)
+      command: >
+        aws iam create-policy
+        --policy-name {{ iam_policy_name }}
+        --policy-document file://{{ iam_policy_file }}
+        --query 'Policy.Arn'
+        --output text
+      when: lb_policy.stdout == ""
+      register: created_policy
+
+    - name: Set IAM policy ARN fact
+      set_fact:
+        lb_policy_arn: >-
+          {{ created_policy.stdout
+             if (created_policy is defined and created_policy.stdout != "") 
+             else lb_policy.stdout }}
+
+    - name: Create IAM service account for AWS Load Balancer Controller
+      command: >
+        eksctl create iamserviceaccount
+        --cluster {{ cluster_name }}
+        --region {{ aws_region }}
+        --namespace kube-system
+        --name aws-load-balancer-controller
+        --role-name AmazonEKSLoadBalancerControllerRole
+        --attach-policy-arn {{ lb_policy_arn }}
+        --approve
+        --override-existing-serviceaccounts
+      register: iam_sa
+      changed_when: "'created' in iam_sa.stdout or 'updated' in iam_sa.stdout"
+
+    - name: Add EKS Helm repository (eks)
+      command: helm repo add eks https://aws.github.io/eks-charts
+      register: helm_repo_add
+      failed_when: helm_repo_add.rc != 0 and
+                   ("exists" not in helm_repo_add.stderr | default("")) and
+                   ("already" not in helm_repo_add.stderr | default(""))
+
+    - name: Update Helm repositories
+      command: helm repo update
+
+    - name: Install/Upgrade AWS Load Balancer Controller via Helm
+      command: >
+        helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller
+        --namespace kube-system
+        --set clusterName={{ cluster_name }}
+        --set serviceAccount.create=false
+        --set serviceAccount.name=aws-load-balancer-controller
+        --set region={{ aws_region }}
+        --set vpcId={{ vpc_id }}
+      register: helm_lb
+      changed_when: helm_lb.rc == 0
+
+    - name: Show status of AWS Load Balancer Controller deployment
+      command: kubectl get deployment aws-load-balancer-controller -n kube-system
+      register: alb_status
+      changed_when: false
+
+    - debug:
+        msg: "{{ alb_status.stdout }}"
