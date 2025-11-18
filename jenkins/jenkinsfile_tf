@@ -8,10 +8,20 @@ pipeline {
     }
 
     environment {
-        TF_DIR= "${WORKSPACE}/terraform"
+        PROJECT_DIR   = "${WORKSPACE}/project"
+        TF_DIR= "${PROJECT_DIR}/Terraform"
     }
 
     stages {
+         stage('Pull project Repository') {
+            steps {
+                sh '''
+                    echo "Cloning Ansible repository..."
+                    rm -rf ${PROJECT_DIR}
+                    git clone https://github.com/Abhishekmudda/Devops_project.git ${PROJECT_DIR}
+                    echo "Repository cloned at: ${PROJECT_DIR}"
+                '''
+            }
         stage("Install terraform") {
             steps {
                 script {
