@@ -1,6 +1,6 @@
 aws_region: "us-east-1"
 vpc_id: ${vpc_id}
-batsion_ip: ${bastion_ip}
+bastion_ip: ${bastion_ip}
 cluster_name: ${cluster_name}
 account_id: "440764891644"
 alb_controller_version: "v2.11.0"
