@@ -5,6 +5,9 @@
   become_user: ubuntu
   gather_facts: false
 
+  vars:
+    ansible_become_flags: "-H -S"
+    
   tasks:
     - name: Update kubeconfig for the EKS cluster
       command: >
