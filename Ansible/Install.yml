@@ -39,8 +39,9 @@
       ansible.builtin.command: kubectl version --client
       register: kubectl_version
 
-    - debug:
-      msg: "kubectl installed => {{ kubectl_version.stdout }}"
+    - name: Debug kubectl status
+      debug:
+        msg: "kubectl installed => {{ kubectl_version.stdout }}"
 
     - name: Install eksctl
       ansible.builtin.shell: |
@@ -55,8 +56,9 @@
       ansible.builtin.command: eksctl version
       register: eksctl_version
 
-    - debug:
-      msg: "eksctl installed => {{ eksctl_version.stdout }}"
+    - name: Debug eksctl status
+      debug:
+        msg: "eksctl installed => {{ eksctl_version.stdout }}"
 
     - name: Create .aws directory for ubuntu user
       ansible.builtin.file:
