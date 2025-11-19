@@ -2,6 +2,7 @@
 - name: Configure OIDC and install AWS Load Balancer Controller on EKS
   hosts: all
   become: yes
+  become_user: ubuntu
   gather_facts: false
 
   tasks:
