@@ -40,11 +40,11 @@
         --approve
       when: oidc_id not in oidc_providers.stdout
 
-    # - name: Download IAM policy JSON for AWS Load Balancer Controller
-    #   get_url:
-    #     url: "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/{{ alb_controller_version }}/docs/install/iam_policy.json"
-    #     dest: "{{ iam_policy_file }}"
-    #     mode: '0644'
+    - name: Download IAM policy JSON for AWS Load Balancer Controller
+      get_url:
+        url: "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/{{ alb_controller_version }}/docs/install/iam_policy.json"
+        dest: "{{ iam_policy_file }}"
+        mode: '0644'
 
     - name: Check if IAM policy for AWS Load Balancer Controller already exists
       command: >
