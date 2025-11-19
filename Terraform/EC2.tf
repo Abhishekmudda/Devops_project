@@ -1,6 +1,6 @@
 ##Bastion EC2 Instance###
 resource "aws_instance" "My_EC2_instance" {
-  ami                         = "ami-0150ccaf51ab55a51"
+  ami                         = "ami-0ecb62995f68bb549"
   instance_type               = "t2.micro"
   subnet_id                   = module.public_subnet.subnet_id[0]
   associate_public_ip_address = true

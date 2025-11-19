@@ -1,0 +1,11 @@
+aws_region: "us-east-1"
+vpc_id: ${vpc_id}
+batsion_ip: ${bastion_ip}
+cluster_name: ${cluster}
+account_id: "440764891644"
+alb_controller_version: "v2.11.0"
+iam_policy_name: "AWSLoadBalancerControllerIAMPolicy"
+iam_policy_file: "./iam_policy.json"
+iam_role_name: "AmazonEKSLoadBalancerControllerRole"
+service_account_name: "aws-load-balancer-controller"
+namespace: "kube-system"
