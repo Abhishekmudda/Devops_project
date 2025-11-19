@@ -1,0 +1,78 @@
+---
+- name: Install necessary packages and configure aws
+  hosts: all
+  become: yes
+  gather_facts: false
+
+  tasks:
+    - name: Test connectivity using ping
+      ansible.builtin.ping:
+
+    - name: Install basic packages
+      ansible.builtin.apt:
+        name:
+          - curl
+          - unzip
+          - tar
+        state: present
+        update_cache: yes
+
+    - name: Install AWS CLI v2
+      ansible.builtin.shell: |
+        if ! command -v aws >/dev/null 2>&1; then
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          ./aws/install
+        fi
+      args:
+        chdir: /tmp
+
+    - name: Install kubectl
+      ansible.builtin.shell: |
+        curl -sLO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        install -m 0755 kubectl /usr/local/bin/kubectl
+        rm -f kubectl
+      args:
+        executable: /bin/bash
+
+    - name: Verify kubectl installation
+      ansible.builtin.command: kubectl version --client
+      register: kubectl_version
+
+    - debug:
+      msg: "kubectl installed => {{ kubectl_version.stdout }}"
+
+    - name: Install eksctl
+      ansible.builtin.shell: |
+        curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
+        tar -xzf eksctl_Linux_amd64.tar.gz
+        mv eksctl /usr/local/bin/eksctl
+        rm -f eksctl_Linux_amd64.tar.gz
+      args:
+        executable: /bin/bash
+
+    - name: Verify eksctl installation
+      ansible.builtin.command: eksctl version
+      register: eksctl_version
+
+    - debug:
+      msg: "eksctl installed => {{ eksctl_version.stdout }}"
+
+    - name: Create .aws directory for ubuntu user
+      ansible.builtin.file:
+        path: /home/ubuntu/.aws
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0700'
+
+    - name: Add permanent AWS credentials
+      ansible.builtin.copy:
+        dest: /home/ubuntu/.aws/credentials
+        content: |
+          [default]
+          aws_access_key_id={{ lookup('env','AWS_ACCESS_KEY_ID') }}
+          aws_secret_access_key={{ lookup('env','AWS_SECRET_ACCESS_KEY') }}
+        owner: ubuntu
+        group: ubuntu
+        mode: '0600'

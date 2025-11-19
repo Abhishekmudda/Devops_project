@@ -1,0 +1,149 @@
+---
+- name: Delete AWS Load Balancer Controller and related IAM/OIDC resources
+  hosts: all
+  become: yes
+  gather_facts: false
+
+  tasks:
+    - name: Test connectivity
+      ansible.builtin.ping:
+
+    - name: Ensure kubeconfig is updated
+      command: >
+        aws eks update-kubeconfig
+        --region {{ aws_region }}
+        --name {{ cluster_name }}
+
+    ###########################################################################
+    # Step 1: Delete AWS Load Balancer Controller (Helm uninstall)
+    ###########################################################################
+
+    - name: Uninstall AWS Load Balancer Controller Helm chart
+      command: >
+        helm uninstall aws-load-balancer-controller
+        -n kube-system
+      register: helm_uninstall
+      failed_when: false
+      changed_when: "'uninstalled' in helm_uninstall.stdout"
+
+    ###########################################################################
+    # Step 2: Delete IAM Service Account created by eksctl
+    ###########################################################################
+
+    - name: Delete IAM service account using eksctl
+      command: >
+        eksctl delete iamserviceaccount
+        --cluster {{ cluster_name }}
+        --region {{ aws_region }}
+        --namespace {{ namespace }}
+        --name {{ service_account_name }}
+        --wait
+      register: sa_delete
+      failed_when: false
+      changed_when: "'deleted' in sa_delete.stdout"
+
+    ###########################################################################
+    # Step 3: Delete IAM Role created for ALB Controller
+    ###########################################################################
+
+    - name: Detach IAM policies from the role
+      command: >
+        aws iam list-attached-role-policies
+        --role-name {{ iam_role_name }}
+        --query "AttachedPolicies[].PolicyArn"
+        --output text
+      register: attached_policies
+      changed_when: false
+      failed_when: false
+
+    - name: Detach all role policies
+      command: >
+        aws iam detach-role-policy
+        --role-name {{ iam_role_name }}
+        --policy-arn {{ item }}
+      loop: "{{ attached_policies.stdout_lines }}"
+      when: attached_policies.stdout != ""
+      failed_when: false
+
+    - name: Delete IAM role
+      command: aws iam delete-role --role-name {{ iam_role_name }}
+      register: role_delete
+      failed_when: false
+      changed_when: "'deleted' in role_delete.stdout"
+
+    ###########################################################################
+    # Step 4: Delete IAM Policy created for ALB Controller
+    ###########################################################################
+
+    - name: Get IAM policy ARN
+      command: >
+        aws iam list-policies
+        --scope Local
+        --query "Policies[?PolicyName=='{{ iam_policy_name }}'].Arn"
+        --output text
+      register: lb_policy_arn
+      changed_when: false
+
+    - name: Delete IAM policy versions (except default)
+      command: >
+        aws iam list-policy-versions
+        --policy-arn {{ lb_policy_arn.stdout }}
+        --query "Versions[?IsDefaultVersion==\`false\`].VersionId"
+        --output text
+      register: policy_versions
+      when: lb_policy_arn.stdout != ""
+      changed_when: false
+
+    - name: Delete non-default policy versions
+      command: >
+        aws iam delete-policy-version
+        --policy-arn {{ lb_policy_arn.stdout }}
+        --version-id {{ item }}
+      loop: "{{ policy_versions.stdout_lines }}"
+      when: lb_policy_arn.stdout != ""
+      failed_when: false
+
+    - name: Delete IAM policy
+      command: >
+        aws iam delete-policy
+        --policy-arn {{ lb_policy_arn.stdout }}
+      when: lb_policy_arn.stdout != ""
+      failed_when: false
+
+    ###########################################################################
+    # Step 5: Delete OIDC Provider created by eksctl
+    ###########################################################################
+
+    - name: Get cluster OIDC issuer URL
+      command: >
+        aws eks describe-cluster
+        --region {{ aws_region }}
+        --name {{ cluster_name }}
+        --query "cluster.identity.oidc.issuer"
+        --output text
+      register: oidc_issuer
+      changed_when: false
+
+    - name: Extract OIDC ID
+      set_fact:
+        oidc_id: "{{ oidc_issuer.stdout.split('/') | last }}"
+
+    - name: Get IAM OIDC provider ARN
+      command: >
+        aws iam list-open-id-connect-providers
+        --query "OpenIDConnectProviderList[?contains(Arn, '{{ oidc_id }}')].Arn"
+        --output text
+      register: oidc_provider_arn
+      changed_when: false
+
+    - name: Delete OIDC provider
+      command: aws iam delete-open-id-connect-provider --open-id-connect-provider-arn {{ oidc_provider_arn.stdout }}
+      when: oidc_provider_arn.stdout != ""
+      failed_when: false
+
+    ###########################################################################
+    # Summary
+    ###########################################################################
+
+    - debug:
+        msg: "Cleanup completed for ALB Controller, IAM roles/policies, and OIDC provider."

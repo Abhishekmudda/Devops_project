@@ -1,18 +1,8 @@
 ---
 - name: Configure OIDC and install AWS Load Balancer Controller on EKS
-  hosts: localhost
-  connection: local
+  hosts: all
+  become: yes
   gather_facts: false
-
-  vars:
-    aws_region: "us-east-1"
-    cluster_name: "student-cluster"
-    account_id: "440764891644"
-    vpc_id: "vpc-0c1400b96c9c0dff7"
-
-    alb_controller_version: "v2.11.0"
-    iam_policy_name: "AWSLoadBalancerControllerIAMPolicy"
-    iam_policy_file: "/tmp/iam_policy.json"
 
   tasks:
     - name: Update kubeconfig for the EKS cluster
@@ -50,11 +40,11 @@
         --approve
       when: oidc_id not in oidc_providers.stdout
 
-    - name: Download IAM policy JSON for AWS Load Balancer Controller
-      get_url:
-        url: "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/{{ alb_controller_version }}/docs/install/iam_policy.json"
-        dest: "{{ iam_policy_file }}"
-        mode: '0644'
+    # - name: Download IAM policy JSON for AWS Load Balancer Controller
+    #   get_url:
+    #     url: "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/{{ alb_controller_version }}/docs/install/iam_policy.json"
+    #     dest: "{{ iam_policy_file }}"
+    #     mode: '0644'
 
     - name: Check if IAM policy for AWS Load Balancer Controller already exists
       command: >
@@ -87,9 +77,9 @@
         eksctl create iamserviceaccount
         --cluster {{ cluster_name }}
         --region {{ aws_region }}
-        --namespace kube-system
-        --name aws-load-balancer-controller
-        --role-name AmazonEKSLoadBalancerControllerRole
+        --namespace {{ namespace}} 
+        --name {{ service_account_name }}
+        --role-name {{ iam_role_name }}
         --attach-policy-arn {{ lb_policy_arn }}
         --approve
         --override-existing-serviceaccounts

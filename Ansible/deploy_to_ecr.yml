@@ -5,7 +5,6 @@
   become: yes
   become_user: root
   tasks:
-
     - name: Login to ECR
       shell: >
         aws ecr get-login-password --region {{ aws_region }} |

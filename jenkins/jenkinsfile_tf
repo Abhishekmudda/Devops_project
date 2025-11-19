@@ -64,7 +64,8 @@ pipeline {
                     echo "Running terraform apply..."
                     sh """
                         cd ${TF_DIR}
-                        terraform apply -auto-approve
+                        terraform init -input=false
+                        terraform apply --auto-approve
                     """
                 }
             }
@@ -77,6 +78,7 @@ pipeline {
                     echo "Running terraform destroy..."
                     sh """  
                         cd ${TF_DIR}
+                        terraform init -input=false
                         terraform destroy -auto-approve
                     """
                 }
