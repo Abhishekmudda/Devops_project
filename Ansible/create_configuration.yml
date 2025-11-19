@@ -77,7 +77,7 @@
         eksctl create iamserviceaccount
         --cluster {{ cluster_name }}
         --region {{ aws_region }}
-        --namespace {{ namespace}} 
+        --namespace {{ k8s_namespace}} 
         --name {{ service_account_name }}
         --role-name {{ iam_role_name }}
         --attach-policy-arn {{ lb_policy_arn }}
