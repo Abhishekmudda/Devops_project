@@ -19,6 +19,9 @@ terraform {
     local = {
       source = "hashicorp/local"
     }
+    templatefile = {
+      source = "hashicorp/templatefile"
+    }
   }
 }
 
