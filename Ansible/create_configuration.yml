@@ -5,6 +5,9 @@
   become_user: ubuntu
   gather_facts: false
 
+  vars_files:
+    - vars.yaml 
+  
   vars:
     ansible_become_flags: "-H -S"
     
@@ -78,7 +81,7 @@
         eksctl create iamserviceaccount
         --cluster {{ cluster_name }}
         --region {{ aws_region }}
-        --namespace {{ k8s_namespace}} 
+        --namespace kube-system 
         --name {{ service_account_name }}
         --role-name {{ iam_role_name }}
         --attach-policy-arn {{ lb_policy_arn }}
@@ -86,6 +89,9 @@
         --override-existing-serviceaccounts
       register: iam_sa
       changed_when: "'created' in iam_sa.stdout or 'updated' in iam_sa.stdout"
+
+    - debug:
+        var: iam_sa.stdout
 
     - name: Download Helm installation script
       get_url:
@@ -118,10 +124,16 @@
       register: helm_lb
       changed_when: helm_lb.rc == 0
 
-    - name: Show status of AWS Load Balancer Controller deployment
-      command: kubectl get deployment aws-load-balancer-controller -n kube-system
-      register: alb_status
+    - name: Wait for ALB controller deployment to be ready
+      command: kubectl rollout status deployment/aws-load-balancer-controller -n kube-system --timeout=300s
+      register: rollout_status
+      changed_when: false
+
+    - name: Get ALB controller pods
+      command: >
+        kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller
+      register: alb_pods
       changed_when: false
 
     - debug:
-        msg: "{{ alb_status.stdout }}"
+        var: alb_pods.stdout
