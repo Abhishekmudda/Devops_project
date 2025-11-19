@@ -71,10 +71,7 @@
 
     - name: Set IAM policy ARN fact
       set_fact:
-        lb_policy_arn: >-
-          {{ created_policy.stdout
-             if (created_policy is defined and created_policy.stdout != "") 
-             else lb_policy.stdout }}
+        lb_policy_arn: "{{ created_policy.stdout | default(lb_policy.stdout) }}"
 
     - name: Create IAM service account for AWS Load Balancer Controller
       command: >
