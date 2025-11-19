@@ -87,6 +87,15 @@
       register: iam_sa
       changed_when: "'created' in iam_sa.stdout or 'updated' in iam_sa.stdout"
 
+    - name: Download Helm installation script
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get_helm.sh
+        mode: '0755'
+
+    - name: Install Helm
+      command: /tmp/get_helm.sh
+
     - name: Add EKS Helm repository (eks)
       command: helm repo add eks https://aws.github.io/eks-charts
       register: helm_repo_add
