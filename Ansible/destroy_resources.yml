@@ -21,7 +21,7 @@
         kubectl delete -f ingress.yaml
         kubectl delete -f service.yaml
         kubectl delete -f deployment.yaml
-        kubect delete -f namespace.yaml
+        kubectl delete -f namespace.yaml
         
     - name: Wait for ALB deletion to finish
       shell: |
