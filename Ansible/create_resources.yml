@@ -1,0 +1,36 @@
+---
+- name: Create Kubernetes resources
+  hosts: all
+  become: yes
+  become_user: ubuntu
+  gather_facts: false
+
+  tasks:
+    - name: Copy all Kubernetes manifests to bastion host
+      ansible.builtin.copy:
+        src: ../K8s/
+        dest: /home/ubuntu/K8s/
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+
+
+    - name: deploy all k8s yaml files
+      shell: |
+        cd /home/ubuntu/K8s/
+        kubectl apply -f namespace.yaml
+        kubectl apply -f deployment.yaml
+        kubectl apply -f service.yaml
+        kubectl apply -f ingress.yaml
+    
+    - name: Wait for ALB to be assigned to Ingress
+      shell: |
+        kubectl get ingress my-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+      register: alb_dns
+      retries: 30         # Wait up to ~5 minutes (30 * 10 sec)
+      delay: 10
+      until: alb_dns.stdout != ""
+
+    - name: Show ALB DNS
+      debug:
+        msg: "ALB created successfully. DNS: {{ alb_dns.stdout }}"
