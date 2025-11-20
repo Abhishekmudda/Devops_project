@@ -52,6 +52,12 @@
     #     url: "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/{{ alb_controller_version }}/docs/install/iam_policy.json"
     #     dest: "{{ iam_policy_file }}"
     #     mode: '0644'
+    
+    - name: Copy IAM policy file to remote server
+      copy:
+        src: iam-policy.json
+        dest: /tmp/iam-policy.json
+
 
     - name: Check if IAM policy for AWS Load Balancer Controller already exists
       command: >
@@ -66,7 +72,7 @@
       command: >
         aws iam create-policy
         --policy-name AWSLoadBalancerControllerIAMPolicy
-        --policy-document file://{{ playbook_dir}}/iam-policy.json
+        --policy-document file://tmp/iam-policy.json
         --query 'Policy.Arn'
         --output text
       when: lb_policy.stdout == ""
