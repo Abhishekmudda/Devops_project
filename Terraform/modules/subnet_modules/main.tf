@@ -6,6 +6,8 @@ resource "aws_subnet" "my_subnets" {
   map_public_ip_on_launch = true
   tags = {
     Name = "${var.subnet_name}-${count.index + 1}-${element(data.aws_availability_zones.available.names, count.index)}"
+    kubernetes.io/role/elb = "1"
+    Environment = "dev"
   }
 }
 

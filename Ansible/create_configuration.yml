@@ -92,7 +92,6 @@
         --role-name AmazonEKSLoadBalancerControllerRole
         --attach-policy-arn arn:aws:iam::440764891644:policy/AWSLoadBalancerControllerIAMPolicy
         --approve
-        # --override-existing-serviceaccounts
       register: iam_sa
       changed_when: "'created' in iam_sa.stdout or 'updated' in iam_sa.stdout"
 

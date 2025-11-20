@@ -8,6 +8,7 @@ resource "aws_instance" "My_EC2_instance" {
   key_name                    = var.key_name
   tags = {
     Name = "Bastion_EC2"
+    Environment = "dev"
   }
 }
 
