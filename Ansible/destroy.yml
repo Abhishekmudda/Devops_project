@@ -89,7 +89,7 @@
       command: >
         aws iam list-policy-versions
         --policy-arn {{ lb_policy_arn.stdout }}
-        --query "Versions[?IsDefaultVersion==\`false\`].VersionId"
+        --query 'Versions[?IsDefaultVersion== `false`].VersionId'
         --output text
       register: policy_versions
       when: lb_policy_arn.stdout != ""
