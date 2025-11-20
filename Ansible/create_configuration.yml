@@ -80,6 +80,7 @@
       command: >
         eksctl create iamserviceaccount
         --cluster student-cluster
+        --region us-east-1
         --namespace kube-system 
         --name aws-load-balancer-controller
         --role-name AmazonEKSLoadBalancerControllerRole
