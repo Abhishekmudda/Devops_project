@@ -92,9 +92,15 @@
         --role-name AmazonEKSLoadBalancerControllerRole
         --attach-policy-arn arn:aws:iam::440764891644:policy/AWSLoadBalancerControllerIAMPolicy
         --approve
-        --override-existing-serviceaccounts
+        # --override-existing-serviceaccounts
       register: iam_sa
       changed_when: "'created' in iam_sa.stdout or 'updated' in iam_sa.stdout"
+
+    - name: Update kubeconfig for the EKS cluster
+      command: >
+        aws eks update-kubeconfig
+        --region {{ aws_region }}
+        --name {{ cluster_name }}
 
     - name: Wait for ServiceAccount to appear
       command: kubectl get sa aws-load-balancer-controller -n kube-system
