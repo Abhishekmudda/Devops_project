@@ -72,7 +72,7 @@
       command: >
         aws iam create-policy
         --policy-name AWSLoadBalancerControllerIAMPolicy
-        --policy-document file://tmp/iam-policy.json
+        --policy-document file:///tmp/iam-policy.json
         --query 'Policy.Arn'
         --output text
       when: lb_policy.stdout == ""
@@ -90,7 +90,7 @@
         --namespace kube-system 
         --name aws-load-balancer-controller
         --role-name AmazonEKSLoadBalancerControllerRole
-        --attach-policy-arn {{ lb_policy_arn }}
+        --attach-policy-arn arn:aws:iam::440764891644:policy/AWSLoadBalancerControllerIAMPolicy
         --approve
         --override-existing-serviceaccounts
       register: iam_sa
@@ -131,7 +131,7 @@
       changed_when: helm_lb.rc == 0
 
     - name: Wait for ALB controller deployment to be ready
-      command: kubectl rollout status deployment/aws-load-balancer-controller -n kube-system --timeout=600s
+      command: kubectl rollout status deployment/aws-load-balancer-controller -n kube-system --timeout=300s
       register: rollout_status
       changed_when: false
 
