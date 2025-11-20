@@ -47,11 +47,11 @@
         --approve
       when: oidc_id not in oidc_providers.stdout
 
-    - name: Download IAM policy JSON for AWS Load Balancer Controller
-      get_url:
-        url: "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/{{ alb_controller_version }}/docs/install/iam_policy.json"
-        dest: "{{ iam_policy_file }}"
-        mode: '0644'
+    # - name: Download IAM policy JSON for AWS Load Balancer Controller
+    #   get_url:
+    #     url: "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/{{ alb_controller_version }}/docs/install/iam_policy.json"
+    #     dest: "{{ iam_policy_file }}"
+    #     mode: '0644'
 
     - name: Check if IAM policy for AWS Load Balancer Controller already exists
       command: >
@@ -65,8 +65,8 @@
     - name: Create IAM policy for AWS Load Balancer Controller (if not exists)
       command: >
         aws iam create-policy
-        --policy-name {{ iam_policy_name }}
-        --policy-document file://{{ iam_policy_file }}
+        --policy-name AWSLoadBalancerControllerIAMPolicy
+        --policy-document file://{{ playbook_dir}}/iam-policy.json
         --query 'Policy.Arn'
         --output text
       when: lb_policy.stdout == ""
@@ -79,11 +79,10 @@
     - name: Create IAM service account for AWS Load Balancer Controller
       command: >
         eksctl create iamserviceaccount
-        --cluster {{ cluster_name }}
-        --region {{ aws_region }}
+        --cluster student-cluster
         --namespace kube-system 
-        --name {{ service_account_name }}
-        --role-name {{ iam_role_name }}
+        --name aws-load-balancer-controller
+        --role-name AmazonEKSLoadBalancerControllerRole
         --attach-policy-arn {{ lb_policy_arn }}
         --approve
         --override-existing-serviceaccounts
@@ -125,7 +124,7 @@
       changed_when: helm_lb.rc == 0
 
     - name: Wait for ALB controller deployment to be ready
-      command: kubectl rollout status deployment/aws-load-balancer-controller -n kube-system --timeout=300s
+      command: kubectl rollout status deployment/aws-load-balancer-controller -n kube-system --timeout=600s
       register: rollout_status
       changed_when: false
 
@@ -137,3 +136,11 @@
 
     - debug:
         var: alb_pods.stdout
+    
+    - name: Describe ALB pods
+      command: kubectl describe pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller
+      register: alb_pods_describe
+      changed_when: false
+
+    - debug:
+        var: alb_pods_describe.stdout
