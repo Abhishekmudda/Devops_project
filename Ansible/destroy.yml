@@ -2,6 +2,7 @@
 - name: Delete AWS Load Balancer Controller and related IAM/OIDC resources
   hosts: all
   become: yes
+  become_user: ubuntu
   gather_facts: false
 
   tasks:

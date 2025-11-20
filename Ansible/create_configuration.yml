@@ -96,6 +96,13 @@
       register: iam_sa
       changed_when: "'created' in iam_sa.stdout or 'updated' in iam_sa.stdout"
 
+    - name: Wait for ServiceAccount to appear
+      command: kubectl get sa aws-load-balancer-controller -n kube-system
+      register: sa_check
+      retries: 30
+      delay: 5
+      until: sa_check.rc == 0
+
     - debug:
         var: iam_sa.stdout
 
