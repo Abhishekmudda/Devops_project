@@ -3,6 +3,6 @@ module "public_subnet" {
   subnet_name       = var.public_subnet_name
   subnet_cidr_block = var.public_subnet_cidr
   vpc_id            = module.my_vpc.vpc_id
-
+  val = "1"
   depends_on = [module.my_vpc]
 }
