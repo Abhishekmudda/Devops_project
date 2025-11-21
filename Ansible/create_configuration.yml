@@ -82,6 +82,35 @@
       set_fact:
         lb_policy_arn: "{{ created_policy.stdout | default(lb_policy.stdout) }}"
 
+    - name: Find CloudFormation stacks created by eksctl for ALB
+      command: >
+        aws cloudformation list-stacks
+        --region {{ aws_region }}
+        --query "StackSummaries[?contains(StackName, 'eksctl-{{ cluster_name }}-addon-iamserviceaccount') && StackStatus!='DELETE_COMPLETE'].StackName"
+        --output text
+      register: cfn_stacks
+      changed_when: false
+
+    - name: Delete stack if it exists
+      when: cfn_stacks.stdout != ""
+      command: >
+        aws cloudformation delete-stack
+        --stack-name {{ cfn_stacks.stdout }}
+        --region {{ aws_region }}
+      register: delete_stack
+    
+    - name: Wait for CloudFormation stack deletion
+      when: cfn_stacks.stdout != ""
+      command: >
+        aws cloudformation wait stack-delete-complete
+        --stack-name {{ cfn_stacks.stdout }}
+        --region {{ aws_region }}
+      register: wait_status
+      retries: 30
+      delay: 10
+      until: wait_status.rc == 0
+
+
     - name: Create IAM service account for AWS Load Balancer Controller
       command: >
         eksctl create iamserviceaccount
