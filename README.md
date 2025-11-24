@@ -63,5 +63,4 @@ Files of interest
 - `K8s/` — Kubernetes manifests
 - `jenkins/` — reusable CI pipeline definitions
 
-
-
+**NOTE: If want to change any AWS resource configuration change in terraform.tfvars file**

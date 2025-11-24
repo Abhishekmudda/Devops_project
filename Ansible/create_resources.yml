@@ -14,10 +14,10 @@
         group: ubuntu
         mode: "0644"
 
-    - name: Delete existing ECR secret (if exists)
+    - name: Delete existing ECR secret (if exists) #added
       shell: kubectl delete secret ecr-secret -n student-app --ignore-not-found=true
 
-    - name: Create ECR imagePullSecret for Kubernetes
+    - name: Create ECR imagePullSecret for Kubernetes #Added
       shell: |
         aws ecr get-login-password --region us-east-1 \
         kubectl create secret docker-registry ecr-secret \
