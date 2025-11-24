@@ -14,6 +14,23 @@
         group: ubuntu
         mode: "0644"
 
+    - name: Delete existing ECR secret (if exists)
+      shell: kubectl delete secret ecr-secret -n student-app --ignore-not-found=true
+
+    - name: Create ECR imagePullSecret for Kubernetes
+      shell: |
+        aws ecr get-login-password --region us-east-1 \
+        kubectl create secret docker-registry ecr-secret \
+          --namespace student-app \
+          --docker-server=440764891644.dkr.ecr.us-east-1.amazonaws.com \
+          --docker-username=AWS \
+          --docker-password="$(aws ecr get-login-password --region us-east-1)" || true
+      environment:
+        AWS_ACCESS_KEY_ID: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+        AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+        AWS_DEFAULT_REGION: "{{ aws_region }}"
+      args:
+        warn: false
 
     - name: deploy all k8s yaml files
       shell: |

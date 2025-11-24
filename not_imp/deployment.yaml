@@ -13,12 +13,10 @@ spec:
       labels:
         app.kubernetes.io/name: app
     spec:
-      imagePullSecrets:
-        - name: ecr-secret
       containers:
-      - name: student-app
-        image: 440764891644.dkr.ecr.us-east-1.amazonaws.com/student-management:latest #abhimudda/student-management-website:v1
+      - image: abhimudda/student-management-website:v1
         imagePullPolicy: Always
+        name: student-app
         ports:
         - containerPort: 5000
         resources:
