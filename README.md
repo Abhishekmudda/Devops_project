@@ -48,7 +48,12 @@ sudo cat /var/lib/jenkins/secret/intialAdminPassword
 - create a pipeline project and copy paste jenkins pipeline script.
 - Then Build the pipeline with parameters.
 
-![Pipeline Image](./pipeline_image.png) 
+Pipeline Image
+-----------------------------------------------------------------------
+- ![Pipeline Image](./pipeline_image.png) 
+- First Install necessary packages, Then build image and push into ECR.
+- Create Infrastructure and deploy application.
+- Access it through DNS of ALB.
 
 Files of interest 
 ---------------------------------
