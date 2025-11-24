@@ -7,7 +7,7 @@ resource "aws_instance" "My_EC2_instance" {
   vpc_security_group_ids      = [aws_security_group.sg-group.id]
   key_name                    = var.key_name
   tags = {
-    Name = "Bastion_EC2"
+    Name        = "Bastion_EC2"
     Environment = "dev"
   }
 }
@@ -60,8 +60,8 @@ resource "aws_iam_role" "Bastion_ec2_role" {
 
 
 resource "aws_iam_policy" "Bastion_policy" {
-  name        = "BastionEKSPolicy"
-  
+  name = "BastionEKSPolicy"
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

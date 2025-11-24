@@ -1,10 +1,10 @@
 terraform {
   required_version = ">= 1.5.0"
   backend "s3" {
-  bucket         = "abhishek-112233-bucket"
-  key            = "eks/terraform.tfstate"   # path inside the bucket
-  region         = "us-east-1"
-  encrypt        = true
+    bucket  = "abhishek-112233-bucket"
+    key     = "eks/terraform.tfstate" # path inside the bucket
+    region  = "us-east-1"
+    encrypt = true
   }
   required_providers {
     aws = {

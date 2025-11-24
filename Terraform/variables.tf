@@ -50,3 +50,11 @@ variable "chart_version" {
 variable "key_name" {
   type = string
 }
+
+variable "public_subnet_tags" {
+  type = map(any)
+}
+
+variable "private_subnet_tags" {
+  type = map(any)
+}

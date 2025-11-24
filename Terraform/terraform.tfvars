@@ -9,5 +9,13 @@ cluster_name        = "student-cluster"
 eks_version         = "1.30"
 node_group_name     = "single-node"
 node_type           = "t2.medium"
-chart_version       = "1.9.2" 
-key_name = "practice_key"
+chart_version       = "1.9.2"
+key_name            = "practice_key"
+public_subnet_tags = {
+  "kubernetes.io/role/elb" = "1"
+  "subnet" = "public_subnet"
+}
+
+private_subnet_tags = {
+  "subnet" = "private_subnet"
+}
