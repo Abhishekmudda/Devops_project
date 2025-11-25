@@ -11,48 +11,29 @@ from dotenv import load_dotenv
 from urllib.parse import urlparse
 
 load_dotenv()
-db = SQLAlchemy() ##added
-login_manager = LoginManager() #added
 
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
     db_url = os.getenv('DATABASE_URL')
-    # if db_url:
-    #     # Render & others might give postgres://; SQLAlchemy needs postgresql://
-    #     if db_url.startswith("postgres://"):
-    #         db_url = db_url.replace("postgres://", "postgresql://", 1)
-    #     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-    # else:
-    #     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-    # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    #### added 
-    if db_url and db_url.startswith("postgres://"):
-        db_url = db_url.replace("postgres://", "postgresql://", 1)
-
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'sqlite:///app.db'
+    if db_url:
+        # Render & others might give postgres://; SQLAlchemy needs postgresql://
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    db.init_app(app)
-    login_manager.init_app(app)
-    login_manager.login_view = "login"
-
-    with app.app_context():
-        db.create_all()
-    ### added
-     
+         
     return app
 
-
-
 app = create_app()
-# db = SQLAlchemy(app)
-# with app.app_context():
-#     db.create_all()
+db = SQLAlchemy(app)
+with app.app_context():
+    db.create_all()
 
-# login_manager = LoginManager(app)
-# login_manager.login_view = "login"
+login_manager = LoginManager(app)
+login_manager.login_view = "login"
 
 BRANCHES = ["CS", "IT", "ME", "ECE", "EE", "CE"]
 
@@ -105,11 +86,11 @@ class StudentForm(FlaskForm):
     phone = StringField("Phone (optional)", validators=[Length(max=50)])
     submit = SubmitField("Save")
 
-# # --- CLI helper ---
-# @app.cli.command("db-init")
-# def db_init():
-#     db.create_all()
-#     print("Database initialized.")
+# --- CLI helper ---
+@app.cli.command("db-init")
+def db_init():
+    db.create_all()
+    print("Database initialized.")
 
 # --- Routes ---
 @app.route("/")
