@@ -39,7 +39,7 @@ sudo systemctl start jenkins
 sudo systemctl enable jenkins
 
 sudo systemctl status jenkins
-sudo cat /var/lib/jenkins/secret/intialAdminPassword
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
 - copy the password to the UI and create a user.
 - Install Plugins.

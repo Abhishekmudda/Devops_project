@@ -28,8 +28,8 @@ def create_app():
 
 app = create_app()
 db = SQLAlchemy(app)
-with app.app_context():
-    db.create_all()
+# with app.app_context():
+#     db.create_all()
 
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
@@ -65,6 +65,10 @@ class Student(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Make sure all tables exist
+with app.app_context():
+    db.create_all()
+    
 # --- Forms ---
 class SignupForm(FlaskForm):
     email = StringField("Email", validators=[InputRequired(), Email(), Length(max=255)])
