@@ -13,6 +13,8 @@ Repository layout (high level)
 - `K8s/` - Kubernetes manifests (namespace, deployment, service, ingress) used to deploy the Flask app on EKS.
 - `jenkins/` - Jenkins pipeline files (Jenkinsfile) for CI jobs: ECR build and Terraform operations.
 
+- ![Folder structure](./project%20structure%20(vscode).png)
+
 Steps to set up Jenkins
 ----------------------------------
 - Create EC2 instance [ubuntu, t2.medium, 16GiB EBS Volume, security group (port 22,443,80,8080 allow)] and name it has jenkins server
@@ -47,6 +49,16 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 - Go to credentials add AWS credentials and ssh key for Bastion Host.
 - create a pipeline project and copy paste jenkins pipeline script.
 - Then Build the pipeline with parameters.
+
+Build with parameters view
+--------------------------------------------------------------------
+- ![parameters view](./Build%20with%20parameters%20view.png)
+- There are two options 
+- one click deployment
+- Deploy step by step
+- If choose is full_deploy == apply then it deploys entire application in one click
+- If choose is to deploy step by step then order matters 
+- creation order is important pull the repository, push to ECR, create infra, configure using ansible, create K8s resources. During destroying follow destroy K8s resources, remove configuration, destroy infra.
 
 Pipeline Image
 -----------------------------------------------------------------------
