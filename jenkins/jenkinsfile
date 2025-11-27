@@ -1,41 +1,114 @@
 pipeline {
-    agent any
-
-    parameters {
+	agent any 
+	
+		parameters {
         string(name: "ACCOUNT_ID", defaultValue: "440764891644", description: "Enter AWS Account ID")
         string(name: "AWS_REGION", defaultValue: "us-east-1", description: "Enter AWS Region")
         string(name: "ECR_REPO", defaultValue: "student-management", description: "Enter ECR Repository Name")
-    }
+        choice(name: "ECR", choices:['No', 'Yes'], description: "Do you want to Deploy to ECR via Ansible")
+        choice(name: "Pull", choices:['No', 'Yes'], description: "Do you want to pull Roject Repository")
+		choice(name: "full_deploy", choices: ['None','plan','apply','destroy' ], description: 'Select what you want Terraform to do')
+        choice(name: "Infra_only", choices: ['None','plan','apply','destroy' ], description: 'Select what you want Terraform to do')
+		choice(name: "Ansible_only", choices:['None','create', 'destroy' ], description: 'Select what you want Ansible to do')
+        choice(name: "kubernetes_only", choices:['None','create', 'destroy' ], description: 'Do you want to create K8s resources')
+		}
+		
+		environment {
+        PROJECT_DIR   = "${WORKSPACE}/project"
+        TF_DIR= "${PROJECT_DIR}/Terraform"
+        ANSIBLE_DIR= "${PROJECT_DIR}/Ansible"
+        KUB_DIR= "${PROJECT_DIR}/K8s"
+		}
+		
+		stages {
+        stage ("Install ansible") {
+            steps { 
+                script { 
+                    def ansibleInstalled = sh(script: "command -v ansible >/dev/null 2>&1", returnStatus: true)
 
-    environment {
-        PLAYBOOK_FILE = "deploy_to_ecr.yml"
-        ANSIBLE_IMAGE = "cytopia/ansible:latest"
-        PROJECT_DIR   = "${WORKSPACE}/ansible-project"
-    }
-
-    stages {
+                    if (ansibleInstalled == 0) {
+                        echo "Ansible already installed. Skipping Installation"
+                    } else {
+                        echo "Anisble is not found. Installing....."
+                        sh '''
+                        sudo add-apt-repository ppa:ansible/ansible
+                        sudo apt update
+                        echo "Installing ansible"
+                        sudo apt install ansible -y
+                        echo "Ansible version"
+                        ansible --version 
+                        '''
+                    }
+                }
+            }
+        }
 
         stage('Install Docker') {
             steps {
+                script {
+                    def dockerInstalled = sh(script: "command -v docker >/dev/null 2>&1", returnStatus: true)
+
+                    if (dockerInstalled == 0) {
+                        echo "Docker already installed. Skipping Installation"
+                    } else {
+                        sh '''
+                            echo "Updating system..."
+                            sudo apt update -y
+
+                            echo "Installing Docker..."
+                            sudo apt install -y docker.io
+
+                            sudo systemctl enable docker
+                            sudo systemctl start docker
+
+                            echo "Adding Jenkins to docker group..."
+                            sudo usermod -aG docker jenkins
+
+                            echo "Docker installed successfully."
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Install AWS CLI') {
+            steps {
                 sh '''
-                    echo "Updating system..."
-                    sudo apt update -y
-
-                    echo "Installing Docker..."
-                    sudo apt install -y docker.io
-
-                    echo "Adding Jenkins to docker group..."
-                    sudo usermod -aG docker jenkins
-
-                    sudo systemctl enable docker
-                    sudo systemctl start docker
-
-                    echo "Docker installed successfully."
+                if ! command -v aws >/dev/null 2>&1; then
+                    sudo apt install -y unzip curl
+                    echo "Installing AWS CLI..."
+                    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                    unzip awscliv2.zip
+                    sudo ./aws/install
+                else
+                    echo "AWS CLI already installed."
+                fi
                 '''
+            }
+        }
+        
+        stage("Install terraform") {
+            steps {
+                script {
+                    def terraform_installed = sh(script: "command -v terraform >/dev/null 2>&1", returnStatus: true)
+
+                    if (terraform_installed == 0) {
+                        echo "Terraform is already installed. Skipping installation."
+                    } else {
+                        echo "Terraform not found. Installing..."
+                        sh '''
+                            wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+                            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+                            sudo apt update && sudo apt install -y terraform
+                            terraform --version
+                        '''
+                    }
+                }
             }
         }
 
         stage('Pull Ansible Repository') {
+             when { expression { params.Pull == 'Yes' } }
             steps {
                 sh '''
                     echo "Cloning Ansible repository..."
@@ -45,25 +118,175 @@ pipeline {
                 '''
             }
         }
-        
-        stage('Deploy to ECR via Ansible') {
-            steps {
-                sh '''
-                    echo "Running Ansible playbook inside Ansible Docker container..."
 
-                    docker run --rm \
-						-v ${PROJECT_DIR}:/work \
-						-v /var/run/docker.sock:/var/run/docker.sock \
-						-v ~/.aws:/root/.aws \
-						-w /work/Ansible \
-						${ANSIBLE_IMAGE} \
-						sh -c "
-							apk update && apk add docker-cli aws-cli && ansible-playbook ${PLAYBOOK_FILE} \
-							--extra-vars 'aws_region=${AWS_REGION} ecr_repo=${ECR_REPO} account_id=${ACCOUNT_ID}'
-                        "
+        stage('Deploy to ECR via Ansible') {
+            when { expression { params.ECR == 'Yes' } }
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-cred']]) {
+                sh '''
+                    echo "AWS KEY = $AWS_ACCESS_KEY_ID"
+                    echo "AWS SECRET = $AWS_SECRET_ACCESS_KEY"
+                    echo "AWS REGION = ${AWS_REGION}"
+                    cd ${ANSIBLE_DIR}
+                    pwd
+                    echo "Executing Ansible playbook"
+                    ansible-playbook deploy_to_ecr.yml --extra-vars "aws_region=${AWS_REGION} ecr_repo=${ECR_REPO} account_id=${ACCOUNT_ID}"
                     echo "ECR deployment completed successfully."
                 '''
+                }
             }
         }
-    }
+
+        stage('Terraform Plan') {
+            when { expression { params.full_deploy == 'plan' || params.Infra_only == 'plan'} }
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-cred']]) {
+                    echo "Running terraform plan..."
+                    sh """
+                        cd ${TF_DIR}
+                        terraform init -upgrade -input=false
+                        terraform plan
+                    """
+                }
+            }
+        }
+		
+		stage('Terraform Apply') {
+            when { expression { params.full_deploy == 'apply' || params.Infra_only == 'apply' } }
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-cred']]) {
+                    echo "Running terraform apply..."
+                    sh """
+                        cd ${TF_DIR}
+                        terraform init -input=false
+                        terraform apply --auto-approve
+                        sudo cp ${TF_DIR}/vars.yml ${ANSIBLE_DIR}/vars.yaml
+
+                        IP=\$(grep -E '^bastion_ip:' ${ANSIBLE_DIR}/vars.yaml | awk '{print \$2}')
+
+                        echo "Extracted IP = \$IP"
+                        sudo sh -c "echo '[all]' > ${ANSIBLE_DIR}/inventory.ini"
+                        sudo sh -c "echo '\$IP ansible_user=ubuntu' >> ${ANSIBLE_DIR}/inventory.ini"
+                    """
+                }
+            }
+        }
+		
+		stage("Run Ansible Playbook to create a OIDC configuration") {
+			when { expression { params.full_deploy == 'apply' || params.Ansible_only == 'create' } }
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'SSH_KEY'),
+                    [$class: 'AmazonWebServicesCredentialsBinding', 
+                     credentialsId: 'aws-cred']
+                ]) {
+
+                    sh '''
+                        export ANSIBLE_HOST_KEY_CHECKING=False
+                        # Export AWS Credentials for Ansible
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=us-east-1
+                        cd ${ANSIBLE_DIR}
+
+                        ansible-playbook -i inventory.ini \
+                        --private-key $SSH_KEY \
+                        Install.yml \
+						-e @vars.yaml
+
+                        ansible-playbook -i inventory.ini \
+                        --private-key $SSH_KEY \
+                        create_configuration.yml \
+						-e @vars.yaml
+                    '''
+                }
+            }
+        }
+		
+		stage("create kubernetes resources") {
+			when { expression { params.full_deploy == 'apply' || params.kubernetes_only == 'create' } }
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'SSH_KEY'),
+                    [$class: 'AmazonWebServicesCredentialsBinding', 
+                     credentialsId: 'aws-cred']
+                ]) {
+
+                    sh '''
+                        export ANSIBLE_HOST_KEY_CHECKING=False
+                        # Export AWS Credentials for Ansible
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=us-east-1
+                        cd ${ANSIBLE_DIR}
+                        ansible-playbook -i inventory.ini \
+                        --private-key $SSH_KEY \
+                        create_resources.yml 
+                    '''
+                }
+            }
+        }
+		
+		stage("destroy kubernetes resources") {
+			when { expression { params.full_deploy == 'destroy' || params.kubernetes_only == 'destroy' } }
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'SSH_KEY'),
+                    [$class: 'AmazonWebServicesCredentialsBinding', 
+                     credentialsId: 'aws-cred']
+                ]) {
+
+                    sh '''
+                        export ANSIBLE_HOST_KEY_CHECKING=False
+                        # Export AWS Credentials for Ansible
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=us-east-1
+                        cd ${ANSIBLE_DIR}
+                        ansible-playbook -i inventory.ini \
+                        --private-key $SSH_KEY \
+                        destroy_resources.yml 
+                    '''
+                }
+            }
+        }
+		
+		stage("Run Ansible Playbook to destroy a OIDC configuration") {
+			when { expression { params.full_deploy == 'destroy' || params.Ansible_only == 'destroy' }}
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'SSH_KEY'),
+                    [$class: 'AmazonWebServicesCredentialsBinding', 
+                     credentialsId: 'aws-cred']
+                ]) {
+
+                    sh '''
+                        export ANSIBLE_HOST_KEY_CHECKING=False
+                        # Export AWS Credentials for Ansible
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=us-east-1
+                        cd ${ANSIBLE_DIR}
+                        ansible-playbook -i inventory.ini \
+                        --private-key $SSH_KEY \
+                        destroy.yml \
+						-e @vars.yaml
+                    '''
+                }
+			}
+		}
+		stage('Terraform Destroy') {
+            when { expression { params.full_deploy == 'destroy' || params.Infra_only =='destroy' } }
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-cred']]) {
+                    echo "Running terraform destroy..."
+                    sh """  
+                        cd ${TF_DIR}
+                        terraform init -input=false
+                        terraform destroy -auto-approve
+                    """
+                }
+            }
+        }
+	}
 }
