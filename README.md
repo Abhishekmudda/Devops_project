@@ -78,5 +78,6 @@ Files of interest
 **NOTE: If want to change any AWS resource configuration change in terraform.tfvars file**
 
 
-**Architecture of the Student Management App**
+Architecture of the Student Management App
+-------------------------------------------------------
 ![Architecture](./Images/Architecture.png)
