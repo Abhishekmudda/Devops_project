@@ -13,7 +13,7 @@ Repository layout (high level)
 - `K8s/` - Kubernetes manifests (namespace, deployment, service, ingress) used to deploy the Flask app on EKS.
 - `jenkins/` - Jenkins pipeline files (Jenkinsfile) for CI jobs: ECR build and Terraform operations.
 
-- ![Folder structure](./project%20structure%20(vscode).png)
+- ![Folder structure](./Images/project%20structure%20(vscode).png)
 
 Steps to set up Jenkins
 ----------------------------------
@@ -52,7 +52,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
 Build with parameters view
 --------------------------------------------------------------------
-![parameters view](./Build%20with%20parameters%20view.png)
+![parameters view](./Images/Build%20with%20parameters%20view.png)
 - There are two options 
 - one click deployment
 - Deploy step by step
@@ -62,7 +62,7 @@ Build with parameters view
 
 Pipeline Image
 -----------------------------------------------------------------------
-![Pipeline Image](./pipeline_image.png) 
+![Pipeline Image](./Images/pipeline_image.png) 
 - First Install necessary packages, Then build image and push into ECR.
 - Create Infrastructure and deploy application.
 - Access it through DNS of ALB.
@@ -79,4 +79,4 @@ Files of interest
 
 
 **Architecture of the Student Management App**
-![Architecture](./Architecture.png)
+![Architecture](./Images/Architecture.png)
