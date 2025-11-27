@@ -52,7 +52,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
 Build with parameters view
 --------------------------------------------------------------------
-- ![parameters view](./Build%20with%20parameters%20view.png)
+![parameters view](./Build%20with%20parameters%20view.png)
 - There are two options 
 - one click deployment
 - Deploy step by step
@@ -62,7 +62,7 @@ Build with parameters view
 
 Pipeline Image
 -----------------------------------------------------------------------
-- ![Pipeline Image](./pipeline_image.png) 
+![Pipeline Image](./pipeline_image.png) 
 - First Install necessary packages, Then build image and push into ECR.
 - Create Infrastructure and deploy application.
 - Access it through DNS of ALB.
@@ -76,3 +76,7 @@ Files of interest
 - `jenkins/` — reusable CI pipeline definitions
 
 **NOTE: If want to change any AWS resource configuration change in terraform.tfvars file**
+
+
+**Architecture of the Student Management App**
+![Architecture](./Architecture.png)
