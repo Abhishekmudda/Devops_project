@@ -15,10 +15,6 @@
         --region {{ aws_region }}
         --name {{ cluster_name }}
 
-    ###########################################################################
-    # Step 1: Delete AWS Load Balancer Controller (Helm uninstall)
-    ###########################################################################
-
     - name: Uninstall AWS Load Balancer Controller Helm chart
       command: >
         helm uninstall aws-load-balancer-controller
@@ -26,10 +22,6 @@
       register: helm_uninstall
       failed_when: false
       changed_when: "'uninstalled' in helm_uninstall.stdout"
-
-    ###########################################################################
-    # Step 2: Delete IAM Service Account created by eksctl
-    ###########################################################################
 
     - name: Delete IAM service account using eksctl
       command: >
@@ -42,10 +34,6 @@
       register: sa_delete
       failed_when: false
       changed_when: "'deleted' in sa_delete.stdout"
-
-    ###########################################################################
-    # Step 3: Delete IAM Role created for ALB Controller
-    ###########################################################################
 
     - name: Detach IAM policies from the role
       command: >
@@ -71,10 +59,6 @@
       register: role_delete
       failed_when: false
       changed_when: "'deleted' in role_delete.stdout"
-
-    ###########################################################################
-    # Step 4: Delete IAM Policy created for ALB Controller
-    ###########################################################################
 
     - name: Get IAM policy ARN
       command: >
@@ -111,10 +95,6 @@
       when: lb_policy_arn.stdout != ""
       failed_when: false
 
-    ###########################################################################
-    # Step 5: Delete OIDC Provider created by eksctl
-    ###########################################################################
-
     - name: Get cluster OIDC issuer URL
       command: >
         aws eks describe-cluster
@@ -141,10 +121,6 @@
       command: aws iam delete-open-id-connect-provider --open-id-connect-provider-arn {{ oidc_provider_arn.stdout }}
       when: oidc_provider_arn.stdout != ""
       failed_when: false
-
-    ###########################################################################
-    # Summary
-    ###########################################################################
 
     - debug:
         msg: "Cleanup completed for ALB Controller, IAM roles/policies, and OIDC provider."
