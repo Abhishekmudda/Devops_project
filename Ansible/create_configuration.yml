@@ -96,8 +96,10 @@
       command: >
         aws cloudformation delete-stack
         --stack-name {{ cfn_stacks.stdout }}
+        --no-enable-termination-protection
         --region {{ aws_region }}
       register: delete_stack
+      ignore_errors: yes
     
     - name: Wait for CloudFormation stack deletion
       when: cfn_stacks.stdout != ""
